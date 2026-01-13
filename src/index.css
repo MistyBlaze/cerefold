@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 240 16% 3%;
+    --foreground: 220 14% 96%;
+    --card: 240 12% 6%;
+    --card-foreground: 220 14% 96%;
+    --popover: 240 12% 6%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 200 100% 50%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 258 92% 75%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 240 8% 12%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 166 86% 56%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 240 8% 18%;
+    --input: 240 8% 18%;
+    --ring: 200 100% 50%;
+    --radius: 0.75rem;
+
+    /* Neural color tokens */
+    --neural-blue: 200 100% 50%;
+    --neural-blue-600: 220 100% 50%;
+    --synapse-purple: 258 89% 66%;
+    --synapse-purple-500: 271 91% 65%;
+    --bio-green: 152 100% 50%;
+    --bio-green-600: 160 84% 39%;
+    --warm-neural: 330 86% 70%;
+    --warm-neural-600: 330 81% 60%;
+    
+    /* Brainwave colors */
+    --brainwave-delta: 221 69% 33%;
+    --brainwave-theta: 263 70% 50%;
+    --brainwave-alpha: 189 94% 43%;
+    --brainwave-beta: 142 71% 45%;
+    --brainwave-gamma: 45 93% 47%;
+  }
+
+  .dark {
+    --background: 240 16% 3%;
+    --foreground: 220 14% 96%;
+    --card: 240 12% 6%;
+    --card-foreground: 220 14% 96%;
+    --popover: 240 12% 6%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 200 100% 50%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 258 92% 75%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 240 8% 12%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 166 86% 56%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 240 8% 18%;
+    --input: 240 8% 18%;
+    --ring: 200 100% 50%;
+  }
+
+  .light {
+    --background: 240 10% 98%;
+    --foreground: 240 16% 3%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 16% 3%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 16% 3%;
+    --primary: 200 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 258 92% 75%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 10% 90%;
+    --muted-foreground: 240 10% 40%;
+    --accent: 166 86% 56%;
+    --accent-foreground: 240 16% 3%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 240 10% 85%;
+    --input: 240 10% 85%;
+    --ring: 200 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Fira Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Glass morphism */
+  .glass {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  }
+
+  .glass-strong {
+    @apply backdrop-blur-xl bg-black/60 border border-white/10;
+  }
+
+  /* Neural glow effects */
+  .glow-blue {
+    box-shadow: 0 0 30px rgba(0, 168, 255, 0.3);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+  }
+
+  /* Text gradient */
+  .text-gradient-neural {
+    @apply bg-gradient-to-r from-[#00a8ff] via-[#8b5cf6] to-[#00ff88] bg-clip-text text-transparent;
+  }
+
+  /* Animation utilities */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050508;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 168, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 168, 255, 0.5);
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(0, 168, 255, 0.3);
+  color: #fff;
+}
+
+/* Focus visible */
+:focus-visible {
+  @apply outline-none ring-2 ring-[#00a8ff] ring-offset-0;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Float animation keyframes */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
