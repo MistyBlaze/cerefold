@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import anime from 'animejs';
 import { useIntersection } from '../../hooks/useIntersection';
 import { BRAINWAVE_BANDS } from '../../utils/brainwaveData';
@@ -29,7 +29,8 @@ function LiveWaveform({ color, speed, amplitude }) {
       for (let x = 0; x < width; x++) {
         const y = height / 2 +
           Math.sin((x + offset) * speed * 0.02) * amplitude * 15 +
-          Math.sin((x + offset) * speed * 0.05) * amplitude * 5;
+          Math.sin((x + offset) * speed * 0.05) * amplitude * 5 +
+          Math.sin((x + offset) * speed * 0.01) * amplitude * 8;
 
         if (x === 0) {
           ctx.moveTo(x, y);
@@ -57,28 +58,61 @@ function LiveWaveform({ color, speed, amplitude }) {
   return <canvas ref={canvasRef} className="w-full h-10" data-testid="preview-live-wave" />;
 }
 
+function AnimatedCounter({ value, suffix = '', duration = 1500 }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const { ref, hasIntersected } = useIntersection({ threshold: 0.5 });
+
+  useEffect(() => {
+    if (!hasIntersected) return;
+
+    const numValue = parseFloat(value);
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      
+      setDisplayValue(Math.round(numValue * easeProgress * 10) / 10);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [hasIntersected, value, duration]);
+
+  return (
+    <span ref={ref}>
+      {displayValue}{suffix}
+    </span>
+  );
+}
+
 function MetricCard({ label, value, unit, color, trend }) {
   return (
     <div
       data-testid="preview-metric"
-      className="p-4 rounded-xl bg-black/30 border border-white/10"
+      className="p-4 rounded-xl bg-black/30 border border-white/10 hover:border-white/20 transition-all group"
     >
       <div className="text-xs text-white/50 uppercase tracking-wider mb-2">{label}</div>
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold font-['Space_Grotesk']" style={{ color }}>
-          {value}
+        <span className="text-2xl font-bold font-['Space_Grotesk'] group-hover:scale-105 transition-transform" style={{ color }}>
+          <AnimatedCounter value={value} />
         </span>
         <span className="text-sm text-white/40">{unit}</span>
       </div>
-      <div className={`text-xs mt-2 ${trend > 0 ? 'text-[#00ff88]' : 'text-[#f472b6]'}`}>
-        {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% from baseline
+      <div className={`text-xs mt-2 flex items-center gap-1 ${trend > 0 ? 'text-[#00ff88]' : 'text-[#f472b6]'}`}>
+        <span className={`transform ${trend > 0 ? '' : 'rotate-180'}`}>↑</span>
+        {Math.abs(trend)}% from baseline
       </div>
     </div>
   );
 }
 
 export default function DashboardPreview() {
-  const { ref, hasIntersected } = useIntersection({ threshold: 0.2 });
+  const { ref, hasIntersected } = useIntersection({ threshold: 0.15 });
 
   useEffect(() => {
     if (!hasIntersected) return;
@@ -87,19 +121,31 @@ export default function DashboardPreview() {
       targets: '.dashboard-content',
       translateY: [40, 0],
       opacity: [0, 1],
+      filter: ['blur(10px)', 'blur(0px)'],
       duration: 800,
       easing: 'easeOutExpo',
       delay: anime.stagger(100)
     });
 
-    // Animate metric counters
+    // Pulse the recording indicator
     anime({
-      targets: '.metric-value',
-      innerHTML: (el) => [0, el.getAttribute('data-value')],
-      round: 1,
-      easing: 'easeInOutExpo',
+      targets: '.recording-dot',
+      scale: [1, 1.3, 1],
+      opacity: [0.7, 1, 0.7],
       duration: 1500,
-      delay: anime.stagger(200, { start: 500 })
+      easing: 'easeInOutSine',
+      loop: true
+    });
+
+    // Animate heat map regions
+    anime({
+      targets: '.heat-spot',
+      opacity: [0.3, 0.8, 0.3],
+      scale: [0.95, 1.05, 0.95],
+      duration: 2500,
+      easing: 'easeInOutSine',
+      loop: true,
+      delay: anime.stagger(400)
     });
   }, [hasIntersected]);
 
@@ -110,6 +156,11 @@ export default function DashboardPreview() {
       data-testid="dashboard-section"
       className="relative py-20 lg:py-32 bg-[#101018]"
     >
+      {/* Background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:30px_30px]" />
+      </div>
+
       <div className="mx-auto max-w-[120rem] px-4 sm:px-6 lg:px-10 relative z-10">
         {/* Header */}
         <div className="dashboard-content text-center mb-12 opacity-0">
@@ -123,19 +174,19 @@ export default function DashboardPreview() {
 
         {/* Dashboard Mock */}
         <div className="dashboard-content max-w-6xl mx-auto opacity-0">
-          <div className="rounded-2xl bg-[#0a0a12] border border-white/10 overflow-hidden shadow-2xl">
+          <div className="rounded-2xl bg-[#0a0a12] border border-white/10 overflow-hidden shadow-2xl shadow-black/50">
             {/* Dashboard Header */}
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-transparent via-white/5 to-transparent">
               <div className="flex items-center gap-3">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
                   <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
                   <div className="w-3 h-3 rounded-full bg-[#27ca40]" />
                 </div>
-                <span className="text-white/60 text-sm">MindFlux Dashboard</span>
+                <span className="text-white/60 text-sm font-medium">MindFlux Dashboard</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
+                <span className="recording-dot w-2 h-2 rounded-full bg-[#00ff88]" />
                 <span className="text-[#00ff88] text-xs font-medium">Recording</span>
               </div>
             </div>
@@ -147,11 +198,13 @@ export default function DashboardPreview() {
                 <div className="lg:col-span-8 space-y-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-white font-semibold">Live EEG Channels</h3>
-                    <div className="flex gap-2">
-                      {['1s', '5s', '10s'].map((t) => (
+                    <div className="flex gap-1">
+                      {['1s', '5s', '10s'].map((t, i) => (
                         <button
                           key={t}
-                          className="px-3 py-1 rounded text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                          className={`px-3 py-1 rounded text-xs transition-colors ${
+                            i === 1 ? 'bg-[#00a8ff]/20 text-[#00a8ff]' : 'text-white/60 hover:text-white hover:bg-white/10'
+                          }`}
                         >
                           {t}
                         </button>
@@ -168,7 +221,7 @@ export default function DashboardPreview() {
                           <LiveWaveform
                             color={BRAINWAVE_BANDS[i % 5].color}
                             speed={3 + i * 0.5}
-                            amplitude={0.8 - i * 0.1}
+                            amplitude={0.8 - i * 0.08}
                           />
                         </div>
                       </div>
@@ -177,7 +230,10 @@ export default function DashboardPreview() {
 
                   {/* Cerebellar channels */}
                   <div className="mt-4">
-                    <h4 className="text-[#8b5cf6] text-sm font-medium mb-3">Cerebellar Sensors</h4>
+                    <h4 className="text-[#8b5cf6] text-sm font-medium mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shadow-[0_0_8px_#8b5cf6]" />
+                      Cerebellar Sensors
+                    </h4>
                     <div className="space-y-2 bg-[#8b5cf6]/10 rounded-xl p-4 border border-[#8b5cf6]/20">
                       {['CB1', 'CB2'].map((channel, i) => (
                         <div key={channel} className="flex items-center gap-4">
@@ -236,27 +292,27 @@ export default function DashboardPreview() {
                     <div className="relative w-full aspect-square max-w-[200px] mx-auto">
                       <svg viewBox="0 0 100 100" className="w-full h-full">
                         {/* Brain outline */}
-                        <ellipse cx="50" cy="50" rx="40" ry="45" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                        {/* Heat spots */}
-                        <circle cx="35" cy="35" r="12" fill="url(#heatGradient1)" className="animate-pulse" style={{ animationDuration: '2s' }} />
-                        <circle cx="65" cy="35" r="10" fill="url(#heatGradient2)" className="animate-pulse" style={{ animationDuration: '2.5s' }} />
-                        <circle cx="50" cy="55" r="15" fill="url(#heatGradient3)" className="animate-pulse" style={{ animationDuration: '3s' }} />
-                        <circle cx="50" cy="80" r="8" fill="url(#heatGradient4)" className="animate-pulse" style={{ animationDuration: '1.5s' }} />
+                        <ellipse cx="50" cy="50" rx="42" ry="46" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                        {/* Heat spots with animation */}
+                        <circle className="heat-spot" cx="35" cy="35" r="14" fill="url(#heatGradient1)" />
+                        <circle className="heat-spot" cx="65" cy="35" r="12" fill="url(#heatGradient2)" />
+                        <circle className="heat-spot" cx="50" cy="55" r="16" fill="url(#heatGradient3)" />
+                        <circle className="heat-spot" cx="50" cy="80" r="10" fill="url(#heatGradient4)" />
                         <defs>
                           <radialGradient id="heatGradient1">
-                            <stop offset="0%" stopColor="#00a8ff" stopOpacity="0.8" />
+                            <stop offset="0%" stopColor="#00a8ff" stopOpacity="0.9" />
                             <stop offset="100%" stopColor="#00a8ff" stopOpacity="0" />
                           </radialGradient>
                           <radialGradient id="heatGradient2">
-                            <stop offset="0%" stopColor="#00ff88" stopOpacity="0.6" />
+                            <stop offset="0%" stopColor="#00ff88" stopOpacity="0.7" />
                             <stop offset="100%" stopColor="#00ff88" stopOpacity="0" />
                           </radialGradient>
                           <radialGradient id="heatGradient3">
-                            <stop offset="0%" stopColor="#eab308" stopOpacity="0.7" />
+                            <stop offset="0%" stopColor="#eab308" stopOpacity="0.8" />
                             <stop offset="100%" stopColor="#eab308" stopOpacity="0" />
                           </radialGradient>
                           <radialGradient id="heatGradient4">
-                            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.8" />
+                            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.9" />
                             <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
                           </radialGradient>
                         </defs>
