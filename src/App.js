@@ -1,6 +1,7 @@
 import React from 'react';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './hooks/useTheme';
+import CosmicBackground from './components/effects/CosmicBackground';
 
 // Sections
 import Navigation from './components/sections/Navigation';
@@ -19,15 +20,19 @@ import './App.css';
 function App() {
   return (
     <ThemeProvider>
-      <div className="App min-h-screen bg-[#050508] dark:bg-[#050508] light:bg-[#fafafc]">
+      <div className="App min-h-screen bg-[#030308] text-white relative">
+        {/* Global Cosmic Background */}
+        <CosmicBackground intensity={0.6} />
+        
         {/* Toast notifications */}
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: 'rgba(10, 10, 15, 0.95)',
+              background: 'rgba(10, 10, 20, 0.95)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#fff'
+              color: '#fff',
+              backdropFilter: 'blur(10px)'
             }
           }}
         />
@@ -36,7 +41,7 @@ function App() {
         <Navigation />
 
         {/* Main Content */}
-        <main>
+        <main className="relative z-10">
           <Hero />
           <Problem />
           <MindFluxProduct />

@@ -1,351 +1,402 @@
 import React, { useEffect, useRef } from 'react';
 import anime from 'animejs';
 import { useIntersection } from '../../hooks/useIntersection';
-import { PRODUCT_FEATURES } from '../../utils/brainwaveData';
 
-// Large detailed EEG Headset visualization
-function HeadsetVisualization() {
+// System architecture visualization inspired by the MindFlux diagrams
+function SystemArchitecture() {
+  const canvasRef = useRef(null);
+
   useEffect(() => {
-    // Animate sensor pulses in sequence
-    anime({
-      targets: '.headset-sensor',
-      scale: [1, 1.5, 1],
-      opacity: [0.6, 1, 0.6],
-      duration: 1800,
-      easing: 'easeInOutSine',
-      loop: true,
-      delay: anime.stagger(100, { from: 'center' })
-    });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Data flow animation
-    anime({
-      targets: '.data-flow-particle',
-      translateY: [-20, 20],
-      opacity: [0, 1, 0],
-      duration: 1500,
-      easing: 'easeInOutSine',
-      loop: true,
-      delay: anime.stagger(200)
-    });
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = 800;
+    const h = canvas.height = 500;
+    let animationId;
+    let time = 0;
 
-    // Headset glow pulse
-    anime({
-      targets: '.headset-glow',
-      opacity: [0.3, 0.6, 0.3],
-      scale: [0.98, 1.02, 0.98],
-      duration: 3000,
-      easing: 'easeInOutSine',
-      loop: true
-    });
+    // Data particles flowing through the system
+    const dataParticles = [];
 
-    // Ring animation
-    anime({
-      targets: '.headset-ring',
-      strokeDashoffset: [0, -50],
-      duration: 4000,
-      easing: 'linear',
-      loop: true
-    });
+    function createDataParticle(startX, startY, endX, endY, color) {
+      dataParticles.push({
+        startX, startY, endX, endY,
+        progress: 0,
+        speed: 0.008 + Math.random() * 0.005,
+        color,
+        size: 3 + Math.random() * 2
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      time += 0.016;
+
+      // Component positions
+      const brainX = 100, brainY = h / 2;
+      const wearableX = 250, wearableY = h / 2;
+      const mobileX = 480, mobileY = h / 2;
+      const cloudX = 700, cloudY = h / 2;
+
+      // Draw connections (curved paths)
+      const drawConnection = (x1, y1, x2, y2, color, isData = true) => {
+        const cp1x = x1 + (x2 - x1) * 0.4;
+        const cp2x = x1 + (x2 - x1) * 0.6;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(isData ? [] : [5, 5]);
+        ctx.moveTo(x1, y1);
+        ctx.bezierCurveTo(cp1x, y1, cp2x, y2, x2, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      };
+
+      // Draw connections
+      drawConnection(brainX + 40, brainY, wearableX - 60, wearableY, 'rgba(0, 168, 255, 0.3)');
+      drawConnection(wearableX + 60, wearableY, mobileX - 80, mobileY, 'rgba(0, 255, 136, 0.3)');
+      drawConnection(mobileX + 80, mobileY, cloudX - 60, cloudY, 'rgba(139, 92, 246, 0.3)');
+
+      // Create data particles periodically
+      if (Math.random() < 0.05) {
+        createDataParticle(brainX + 40, brainY, wearableX - 60, wearableY, '#00a8ff');
+      }
+      if (Math.random() < 0.04) {
+        createDataParticle(wearableX + 60, wearableY, mobileX - 80, mobileY, '#00ff88');
+      }
+      if (Math.random() < 0.03) {
+        createDataParticle(mobileX + 80, mobileY, cloudX - 60, cloudY, '#8b5cf6');
+      }
+
+      // Update and draw data particles
+      for (let i = dataParticles.length - 1; i >= 0; i--) {
+        const p = dataParticles[i];
+        p.progress += p.speed;
+
+        if (p.progress >= 1) {
+          dataParticles.splice(i, 1);
+          continue;
+        }
+
+        const t = p.progress;
+        const cp1x = p.startX + (p.endX - p.startX) * 0.4;
+        const cp2x = p.startX + (p.endX - p.startX) * 0.6;
+
+        // Bezier curve position
+        const x = Math.pow(1-t, 3) * p.startX + 
+                  3 * Math.pow(1-t, 2) * t * cp1x + 
+                  3 * (1-t) * Math.pow(t, 2) * cp2x + 
+                  Math.pow(t, 3) * p.endX;
+        const y = Math.pow(1-t, 3) * p.startY + 
+                  3 * Math.pow(1-t, 2) * t * p.startY + 
+                  3 * (1-t) * Math.pow(t, 2) * p.endY + 
+                  Math.pow(t, 3) * p.endY;
+
+        ctx.beginPath();
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Draw brain (source)
+      ctx.save();
+      ctx.translate(brainX, brainY);
+      
+      // Brain glow
+      const brainGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 50);
+      brainGlow.addColorStop(0, 'rgba(0, 168, 255, 0.3)');
+      brainGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = brainGlow;
+      ctx.beginPath();
+      ctx.arc(0, 0, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Brain outline
+      ctx.strokeStyle = '#00a8ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 35, 42, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Brain activity
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + time;
+        const x = Math.cos(angle) * 20;
+        const y = Math.sin(angle) * 24;
+        const pulse = Math.sin(time * 3 + i) * 0.5 + 0.5;
+        
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(0, 255, 136, ${0.4 + pulse * 0.6})`;
+        ctx.arc(x, y, 3 + pulse * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Draw wearable device
+      ctx.save();
+      ctx.translate(wearableX, wearableY);
+      
+      // Device body
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-55, -35, 110, 70, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // Device label
+      ctx.fillStyle = '#00ff88';
+      ctx.font = 'bold 10px Space Grotesk, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MINDFLUX', 0, -15);
+      ctx.fillStyle = '#ffffff80';
+      ctx.font = '8px sans-serif';
+      ctx.fillText('WEARABLE DEVICE', 0, 0);
+
+      // Signal indicators
+      for (let i = 0; i < 3; i++) {
+        const pulse = Math.sin(time * 4 + i * 0.5) * 0.5 + 0.5;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(0, 255, 136, ${0.3 + pulse * 0.7})`;
+        ctx.arc(-25 + i * 25, 18, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Draw mobile device
+      ctx.save();
+      ctx.translate(mobileX, mobileY);
+      
+      // Phone body
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-45, -70, 90, 140, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // Screen
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
+      ctx.beginPath();
+      ctx.roundRect(-38, -60, 76, 110, 6);
+      ctx.fill();
+
+      // Screen content - mini waveform
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = -30; x < 30; x++) {
+        const y = Math.sin((x + time * 50) * 0.15) * 15;
+        if (x === -30) ctx.moveTo(x, y - 20);
+        else ctx.lineTo(x, y - 20);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff80';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('USER APP', 0, 15);
+      ctx.fillText('Real-time Analytics', 0, 35);
+      ctx.restore();
+
+      // Draw cloud/computing center
+      ctx.save();
+      ctx.translate(cloudX, cloudY);
+      
+      // Cloud shape
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 50, 35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Server indicators
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.8)';
+        ctx.beginPath();
+        ctx.roundRect(-30 + i * 22, -10, 16, 20, 2);
+        ctx.fill();
+        
+        // Blinking lights
+        const blink = Math.sin(time * 5 + i * 2) > 0;
+        ctx.fillStyle = blink ? '#00ff88' : '#00ff8840';
+        ctx.beginPath();
+        ctx.arc(-22 + i * 22, -3, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#ffffff80';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('COMPUTING', 0, -25);
+      ctx.fillText('CENTER', 0, 25);
+      ctx.restore();
+
+      // Labels
+      ctx.fillStyle = '#ffffff40';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Brain Signals', brainX, brainY + 70);
+      ctx.fillText('EEG Capture', wearableX, wearableY + 55);
+      ctx.fillText('Processing', mobileX, mobileY + 90);
+      ctx.fillText('AI Analytics', cloudX, cloudY + 55);
+
+      // Signal type labels on connections
+      ctx.font = '8px sans-serif';
+      ctx.fillStyle = '#00a8ff80';
+      ctx.fillText('Neural Data', (brainX + wearableX) / 2, brainY - 60);
+      ctx.fillStyle = '#00ff8880';
+      ctx.fillText('Processed', (wearableX + mobileX) / 2, wearableY - 60);
+      ctx.fillStyle = '#8b5cf680';
+      ctx.fillText('Analytics', (mobileX + cloudX) / 2, cloudY - 60);
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    animationId = requestAnimationFrame(draw);
+
+    return () => cancelAnimationFrame(animationId);
   }, []);
 
   return (
-    <div className="relative w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] lg:w-[450px] lg:h-[450px]">
-      {/* Glow background */}
-      <div className="headset-glow absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.25),transparent_65%)]" />
-      
-      <svg viewBox="0 0 300 300" className="w-full h-full" fill="none">
-        <defs>
-          <filter id="headsetGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="sensorGlowStrong" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="5" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <linearGradient id="headbandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00a8ff" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#00ff88" />
-          </linearGradient>
-          <linearGradient id="innerRingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.5" />
-            <stop offset="50%" stopColor="#00a8ff" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.5" />
-          </linearGradient>
-        </defs>
+    <canvas
+      ref={canvasRef}
+      className="w-full max-w-[800px] h-auto"
+      style={{ aspectRatio: '800/500' }}
+    />
+  );
+}
 
-        {/* Outer decorative ring */}
-        <circle
-          cx="150"
-          cy="150"
-          r="140"
-          fill="none"
-          stroke="rgba(255,255,255,0.05)"
-          strokeWidth="1"
-        />
-
-        {/* Animated ring */}
-        <circle
-          className="headset-ring"
-          cx="150"
-          cy="150"
-          r="135"
-          fill="none"
-          stroke="url(#innerRingGradient)"
-          strokeWidth="2"
-          strokeDasharray="20,10"
-          opacity="0.5"
-        />
-
-        {/* Main headband - outer */}
-        <ellipse
-          cx="150"
-          cy="150"
-          rx="110"
-          ry="115"
-          fill="none"
-          stroke="url(#headbandGradient)"
-          strokeWidth="12"
-          strokeLinecap="round"
-          filter="url(#headsetGlow)"
-        />
-
-        {/* Inner structure ring */}
-        <ellipse
-          cx="150"
-          cy="150"
-          rx="85"
-          ry="90"
-          fill="none"
-          stroke="rgba(139,92,246,0.4)"
-          strokeWidth="4"
-        />
-
-        {/* Cross supports */}
-        <line x1="150" y1="35" x2="150" y2="75" stroke="rgba(139,92,246,0.3)" strokeWidth="3" />
-        <line x1="150" y1="225" x2="150" y2="265" stroke="rgba(139,92,246,0.3)" strokeWidth="3" />
-        <line x1="40" y1="150" x2="65" y2="150" stroke="rgba(139,92,246,0.3)" strokeWidth="3" />
-        <line x1="235" y1="150" x2="260" y2="150" stroke="rgba(139,92,246,0.3)" strokeWidth="3" />
-
-        {/* Center hub */}
-        <circle cx="150" cy="150" r="25" fill="rgba(10,10,15,0.9)" stroke="#8b5cf6" strokeWidth="2" />
-        <circle cx="150" cy="150" r="15" fill="#8b5cf6" opacity="0.3" />
-        <circle cx="150" cy="150" r="8" fill="#00a8ff" filter="url(#sensorGlowStrong)" />
-
-        {/* Sensor positions - 10-20 system */}
-        {/* Frontal row */}
-        <circle className="headset-sensor" cx="150" cy="38" r="8" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="100" cy="50" r="7" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="200" cy="50" r="7" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="60" cy="75" r="6" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="240" cy="75" r="6" fill="#00a8ff" filter="url(#headsetGlow)" />
-
-        {/* Central row */}
-        <circle className="headset-sensor" cx="40" cy="120" r="6" fill="#00ff88" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="260" cy="120" r="6" fill="#00ff88" filter="url(#headsetGlow)" />
-        
-        {/* Temporal */}
-        <circle className="headset-sensor" cx="35" cy="150" r="7" fill="#06b6d4" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="265" cy="150" r="7" fill="#06b6d4" filter="url(#headsetGlow)" />
-
-        {/* Parietal row */}
-        <circle className="headset-sensor" cx="40" cy="180" r="6" fill="#00ff88" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="260" cy="180" r="6" fill="#00ff88" filter="url(#headsetGlow)" />
-
-        {/* Occipital row */}
-        <circle className="headset-sensor" cx="60" cy="220" r="6" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="240" cy="220" r="6" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="100" cy="245" r="7" fill="#00a8ff" filter="url(#headsetGlow)" />
-        <circle className="headset-sensor" cx="200" cy="245" r="7" fill="#00a8ff" filter="url(#headsetGlow)" />
-
-        {/* Cerebellar sensors - MindFlux exclusive (purple, highlighted) */}
-        <circle className="headset-sensor" cx="120" cy="262" r="8" fill="#8b5cf6" filter="url(#sensorGlowStrong)" />
-        <circle className="headset-sensor" cx="150" cy="268" r="9" fill="#8b5cf6" filter="url(#sensorGlowStrong)" />
-        <circle className="headset-sensor" cx="180" cy="262" r="8" fill="#8b5cf6" filter="url(#sensorGlowStrong)" />
-
-        {/* Data flow particles from sensors to center */}
-        {[0, 60, 120, 180, 240, 300].map((angle, i) => {
-          const rad = (angle * Math.PI) / 180;
-          const startX = 150 + Math.cos(rad) * 100;
-          const startY = 150 + Math.sin(rad) * 105;
-          return (
-            <circle
-              key={i}
-              className="data-flow-particle"
-              cx={startX}
-              cy={startY}
-              r="3"
-              fill="#00ff88"
-              filter="url(#headsetGlow)"
-              opacity="0"
-            />
-          );
-        })}
-
-        {/* Electrode labels */}
-        <text x="150" y="25" textAnchor="middle" fill="#00a8ff" fontSize="8" opacity="0.7">Fz</text>
-        <text x="150" y="285" textAnchor="middle" fill="#8b5cf6" fontSize="9" fontWeight="600">CB</text>
-      </svg>
-
-      {/* Labels */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full pb-2 text-center">
-        <span className="text-xs text-[#00a8ff] font-medium">Frontal Sensors</span>
+// Feature card component
+function FeatureCard({ icon, title, description, color, delay }) {
+  return (
+    <div
+      className="feature-card opacity-0 p-6 rounded-2xl bg-white/[0.03] backdrop-blur-sm border border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300 group"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+        style={{ backgroundColor: `${color}20` }}
+      >
+        <span className="text-2xl">{icon}</span>
       </div>
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pt-2 text-center">
-        <span className="text-xs text-[#8b5cf6] font-semibold">Cerebellar Array</span>
-        <span className="block text-[10px] text-white/40">MindFlux Exclusive</span>
-      </div>
+      <h4 className="text-lg font-semibold text-white mb-2 group-hover:text-[var(--card-color)] transition-colors" style={{ '--card-color': color }}>
+        {title}
+      </h4>
+      <p className="text-white/50 text-sm leading-relaxed">
+        {description}
+      </p>
     </div>
   );
 }
 
 export default function MindFluxProduct() {
-  const { ref, hasIntersected } = useIntersection({ threshold: 0.15 });
-  const orbitRef = useRef(null);
+  const { ref, hasIntersected } = useIntersection({ threshold: 0.1 });
 
   useEffect(() => {
     if (!hasIntersected) return;
 
-    // Animate content
     anime({
-      targets: '.product-content',
+      targets: '.mindflux-header',
       translateY: [50, 0],
       opacity: [0, 1],
-      filter: ['blur(10px)', 'blur(0px)'],
-      duration: 800,
-      easing: 'easeOutExpo',
-      delay: anime.stagger(100)
+      filter: ['blur(15px)', 'blur(0px)'],
+      duration: 1000,
+      easing: 'easeOutExpo'
     });
 
-    // Animate headset
     anime({
-      targets: '.headset-visual',
-      scale: [0.8, 1],
+      targets: '.system-arch',
+      scale: [0.9, 1],
       opacity: [0, 1],
-      duration: 1000,
+      duration: 1200,
       easing: 'easeOutExpo',
       delay: 300
     });
 
-    // Animate orbit items
     anime({
-      targets: '.orbit-item',
-      scale: [0, 1],
+      targets: '.feature-card',
+      translateY: [40, 0],
       opacity: [0, 1],
-      duration: 600,
-      easing: 'easeOutBack',
+      duration: 800,
+      easing: 'easeOutExpo',
       delay: anime.stagger(100, { start: 600 })
     });
-
-    // Slow orbit rotation
-    const orbitAnimation = anime({
-      targets: orbitRef.current,
-      rotate: 360,
-      duration: 80000,
-      easing: 'linear',
-      loop: true
-    });
-
-    return () => {
-      orbitAnimation.pause();
-    };
   }, [hasIntersected]);
+
+  const features = [
+    { icon: '🧠', title: 'Cerebellar Capture', description: 'Dedicated posterior sensors targeting 4-8Hz theta and 8-12Hz alpha oscillations.', color: '#8b5cf6' },
+    { icon: '💓', title: 'Autonomic Decoding', description: 'Heart-brain coherence and vagal tone through integrated biosensors.', color: '#ec4899' },
+    { icon: '📊', title: 'High-Density Array', description: '64+ channels with medical-grade signal fidelity for research applications.', color: '#00a8ff' },
+    { icon: '⚡', title: 'Real-Time Processing', description: 'Sub-10ms latency neural state classification using edge AI.', color: '#00ff88' },
+    { icon: '🤖', title: 'Adaptive Filtering', description: 'AI-powered artifact rejection for clean signals in any environment.', color: '#06b6d4' },
+    { icon: '🔒', title: 'Secure Pipeline', description: 'End-to-end encrypted data transmission with HIPAA compliance.', color: '#eab308' },
+  ];
 
   return (
     <section
       ref={ref}
       id="mindflux"
       data-testid="mindflux-section"
-      className="relative py-20 lg:py-32 bg-[#050510] overflow-hidden"
+      className="relative py-24 lg:py-32 overflow-hidden"
     >
-      {/* Background effects */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.12),transparent_60%)]" />
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_80%,rgba(0,168,255,0.06),transparent_40%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
+      {/* Background */}
+      <div className="absolute inset-0 bg-[#050510]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
 
       <div className="mx-auto max-w-[120rem] px-4 sm:px-6 lg:px-10 relative z-10">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="product-content inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 mb-6 opacity-0">
-            <span className="text-xs font-semibold text-[#8b5cf6] uppercase tracking-wider">Introducing</span>
+        <div className="mindflux-header text-center mb-16 opacity-0">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 mb-6">
+            <span className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse" />
+            <span className="text-sm font-medium text-[#8b5cf6] uppercase tracking-wider">Product</span>
           </div>
-          <h2 className="product-content text-4xl sm:text-5xl lg:text-6xl font-bold text-white font-['Space_Grotesk'] opacity-0">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white font-['Space_Grotesk']">
             MindFlux
           </h2>
-          <p className="product-content mt-4 text-xl text-[#8b5cf6] font-medium opacity-0">
-            Full-Spectrum Neural Intelligence
+          <p className="mt-4 text-xl text-white/40 font-medium">
+            Full-Spectrum Neural Intelligence Platform
           </p>
-          <p className="product-content mt-6 text-white/70 max-w-2xl mx-auto text-lg opacity-0">
-            MindFlux is a breakthrough EEG platform engineered to capture the complete neural picture. 
-            Our proprietary sensor array and signal processing algorithms decode cerebellar rhythms 
-            and autonomic signatures that conventional systems simply cannot see.
+          <p className="mt-6 text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+            A breakthrough EEG system engineered to capture the complete neural picture — 
+            from cortical activity to cerebellar rhythms and autonomic signatures.
           </p>
         </div>
 
-        {/* Product Visualization with Orbiting Features */}
-        <div className="relative flex justify-center items-center min-h-[650px] lg:min-h-[750px]">
-          {/* Central Product */}
-          <div className="headset-visual relative z-20 opacity-0">
-            <HeadsetVisualization />
-          </div>
-
-          {/* Orbiting Features */}
-          <div
-            ref={orbitRef}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ transformOrigin: 'center center' }}
-          >
-            <div className="relative w-[550px] h-[550px] sm:w-[650px] sm:h-[650px] lg:w-[800px] lg:h-[800px]">
-              {PRODUCT_FEATURES.map((feature, index) => {
-                const angle = (index / PRODUCT_FEATURES.length) * 360 - 90;
-                const radian = (angle * Math.PI) / 180;
-                const radius = 48;
-
-                return (
-                  <div
-                    key={index}
-                    data-testid="orbit-feature-card"
-                    className="orbit-item absolute opacity-0 pointer-events-auto"
-                    style={{
-                      left: `${50 + radius * Math.cos(radian)}%`,
-                      top: `${50 + radius * Math.sin(radian)}%`,
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                  >
-                    <div className="w-[170px] sm:w-[190px] p-4 rounded-xl bg-[#0a0a12]/80 backdrop-blur-xl border border-white/10 hover:border-[#00a8ff]/50 hover:bg-white/5 hover:shadow-[0_0_30px_rgba(0,168,255,0.15)] transition-all duration-300 cursor-pointer group">
-                      {/* Connection line indicator */}
-                      <div className="absolute top-1/2 left-1/2 w-px h-16 bg-gradient-to-b from-[#00a8ff]/30 to-transparent -translate-x-1/2 origin-top opacity-50 group-hover:opacity-100 transition-opacity" style={{ transform: `rotate(${-angle - 90}deg)` }} />
-                      
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00a8ff] to-[#8b5cf6] flex items-center justify-center mb-3 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(0,168,255,0.4)] transition-all duration-300">
-                        <span className="text-white font-bold text-sm">{index + 1}</span>
-                      </div>
-                      <h4 className="text-white font-semibold text-sm mb-1 group-hover:text-[#00a8ff] transition-colors">
-                        {feature.title}
-                      </h4>
-                      <p className="text-white/50 text-xs leading-relaxed">
-                        {feature.description.substring(0, 55)}...
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* System Architecture Visualization */}
+        <div className="system-arch opacity-0 flex justify-center mb-20">
+          <div className="relative">
+            <div className="absolute inset-0 -m-4 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.1),transparent_70%)]" />
+            <SystemArchitecture />
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
+              <span className="text-xs text-white/30 uppercase tracking-widest">MindFlux Technology High-Level Architecture</span>
             </div>
           </div>
+        </div>
 
-          {/* Orbit ring */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-[550px] h-[550px] sm:w-[650px] sm:h-[650px] lg:w-[800px] lg:h-[800px] rounded-full border border-dashed border-white/5" />
-            <div className="absolute w-[450px] h-[450px] sm:w-[550px] sm:h-[550px] lg:w-[680px] lg:h-[680px] rounded-full border border-white/5" />
-          </div>
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <FeatureCard
+              key={index}
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+              color={feature.color}
+              delay={index * 100}
+            />
+          ))}
         </div>
       </div>
     </section>
