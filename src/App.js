@@ -1,7 +1,6 @@
 import React from 'react';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './hooks/useTheme';
-import CosmicBackground from './components/effects/CosmicBackground';
 
 // Sections
 import Navigation from './components/sections/Navigation';
@@ -20,10 +19,7 @@ import './App.css';
 function App() {
   return (
     <ThemeProvider>
-      <div className="App min-h-screen bg-[#030308] text-white relative">
-        {/* Global Cosmic Background */}
-        <CosmicBackground intensity={0.6} />
-        
+      <div className="App min-h-screen bg-[#030308] text-white">
         {/* Toast notifications */}
         <Toaster
           position="top-right"
@@ -41,7 +37,7 @@ function App() {
         <Navigation />
 
         {/* Main Content */}
-        <main className="relative z-10">
+        <main>
           <Hero />
           <Problem />
           <MindFluxProduct />

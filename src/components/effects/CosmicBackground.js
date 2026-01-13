@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
-// Cosmic Galaxy Background with stars and nebula
-export default function CosmicBackground({ intensity = 1 }) {
+// Global Cosmic Galaxy Background - constant throughout site
+export default function CosmicBackground() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -11,117 +11,69 @@ export default function CosmicBackground({ intensity = 1 }) {
     const ctx = canvas.getContext('2d');
     let animationId;
     let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
+    let h = canvas.height = window.innerHeight * 3; // Taller to cover scroll
 
-    // Create stars
-    const stars = Array.from({ length: Math.floor(150 * intensity) }, () => ({
+    // Create stars - more of them for a rich galaxy feel
+    const stars = Array.from({ length: 300 }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
-      r: Math.random() * 1.5 + 0.3,
-      twinkleSpeed: Math.random() * 0.02 + 0.01,
+      r: Math.random() * 1.8 + 0.2,
+      twinkleSpeed: Math.random() * 0.015 + 0.005,
       twinklePhase: Math.random() * Math.PI * 2,
-      color: Math.random() > 0.7 ? '#00a8ff' : Math.random() > 0.5 ? '#8b5cf6' : '#ffffff'
+      color: Math.random() > 0.8 ? '#00a8ff' : Math.random() > 0.6 ? '#8b5cf6' : Math.random() > 0.4 ? '#a855f7' : '#ffffff'
     }));
 
-    // Create nebula clouds
+    // Nebula clouds for depth
     const nebulae = [
-      { x: w * 0.2, y: h * 0.3, rx: 300, ry: 200, color: 'rgba(139, 92, 246, 0.04)', rotation: 0 },
-      { x: w * 0.8, y: h * 0.7, rx: 400, ry: 250, color: 'rgba(0, 168, 255, 0.03)', rotation: Math.PI / 4 },
-      { x: w * 0.5, y: h * 0.5, rx: 500, ry: 300, color: 'rgba(236, 72, 153, 0.02)', rotation: -Math.PI / 6 }
+      { x: w * 0.15, y: h * 0.1, rx: 400, ry: 300, color: 'rgba(139, 92, 246, 0.035)' },
+      { x: w * 0.85, y: h * 0.25, rx: 500, ry: 350, color: 'rgba(0, 168, 255, 0.025)' },
+      { x: w * 0.3, y: h * 0.5, rx: 450, ry: 280, color: 'rgba(236, 72, 153, 0.02)' },
+      { x: w * 0.7, y: h * 0.7, rx: 380, ry: 250, color: 'rgba(139, 92, 246, 0.03)' },
+      { x: w * 0.5, y: h * 0.9, rx: 500, ry: 300, color: 'rgba(0, 168, 255, 0.02)' },
     ];
-
-    // Shooting stars
-    const shootingStars = [];
-
-    function createShootingStar() {
-      if (Math.random() < 0.002 * intensity && shootingStars.length < 3) {
-        shootingStars.push({
-          x: Math.random() * w,
-          y: Math.random() * h * 0.5,
-          vx: 3 + Math.random() * 4,
-          vy: 1 + Math.random() * 2,
-          life: 1,
-          decay: 0.015 + Math.random() * 0.01
-        });
-      }
-    }
 
     function draw() {
       ctx.clearRect(0, 0, w, h);
 
-      // Draw nebulae (soft gradient clouds)
+      // Draw gradient background
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, h);
+      bgGradient.addColorStop(0, '#030308');
+      bgGradient.addColorStop(0.3, '#050510');
+      bgGradient.addColorStop(0.6, '#0a0a15');
+      bgGradient.addColorStop(1, '#030308');
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw nebulae
       nebulae.forEach(nebula => {
-        ctx.save();
-        ctx.translate(nebula.x, nebula.y);
-        ctx.rotate(nebula.rotation);
-        
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, nebula.rx);
+        const gradient = ctx.createRadialGradient(nebula.x, nebula.y, 0, nebula.x, nebula.y, nebula.rx);
         gradient.addColorStop(0, nebula.color);
-        gradient.addColorStop(0.5, nebula.color.replace(/[\d.]+\)$/, '0.02)'));
+        gradient.addColorStop(0.6, nebula.color.replace(/[\d.]+\)$/, '0.01)'));
         gradient.addColorStop(1, 'transparent');
         
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.ellipse(0, 0, nebula.rx, nebula.ry, 0, 0, Math.PI * 2);
+        ctx.ellipse(nebula.x, nebula.y, nebula.rx, nebula.ry, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       });
 
-      // Draw stars with twinkling
+      // Draw twinkling stars
       const time = Date.now() * 0.001;
       stars.forEach(star => {
-        const twinkle = Math.sin(time * star.twinkleSpeed * 10 + star.twinklePhase);
-        const alpha = 0.4 + twinkle * 0.4;
-        const size = star.r * (1 + twinkle * 0.2);
+        const twinkle = Math.sin(time * star.twinkleSpeed * 8 + star.twinklePhase);
+        const alpha = 0.3 + twinkle * 0.5;
+        const size = star.r * (1 + twinkle * 0.15);
 
         ctx.beginPath();
         ctx.fillStyle = star.color;
-        ctx.globalAlpha = alpha;
+        ctx.globalAlpha = Math.max(0.1, alpha);
         ctx.shadowColor = star.color;
-        ctx.shadowBlur = 4;
+        ctx.shadowBlur = 3;
         ctx.arc(star.x, star.y, size, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
       });
-
-      // Create and draw shooting stars
-      createShootingStar();
-      for (let i = shootingStars.length - 1; i >= 0; i--) {
-        const ss = shootingStars[i];
-        ss.x += ss.vx;
-        ss.y += ss.vy;
-        ss.life -= ss.decay;
-
-        if (ss.life <= 0) {
-          shootingStars.splice(i, 1);
-          continue;
-        }
-
-        // Draw shooting star trail
-        const gradient = ctx.createLinearGradient(
-          ss.x, ss.y,
-          ss.x - ss.vx * 20, ss.y - ss.vy * 20
-        );
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${ss.life})`);
-        gradient.addColorStop(1, 'transparent');
-
-        ctx.beginPath();
-        ctx.strokeStyle = gradient;
-        ctx.lineWidth = 2;
-        ctx.moveTo(ss.x, ss.y);
-        ctx.lineTo(ss.x - ss.vx * 20, ss.y - ss.vy * 20);
-        ctx.stroke();
-
-        // Draw head
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${ss.life})`;
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 10;
-        ctx.arc(ss.x, ss.y, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
 
       animationId = requestAnimationFrame(draw);
     }
@@ -130,21 +82,20 @@ export default function CosmicBackground({ intensity = 1 }) {
 
     const handleResize = () => {
       w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
+      h = canvas.height = window.innerHeight * 3;
       
-      // Update star positions
+      // Redistribute stars
       stars.forEach(star => {
         star.x = Math.random() * w;
         star.y = Math.random() * h;
       });
       
       // Update nebula positions
-      nebulae[0].x = w * 0.2;
-      nebulae[0].y = h * 0.3;
-      nebulae[1].x = w * 0.8;
-      nebulae[1].y = h * 0.7;
-      nebulae[2].x = w * 0.5;
-      nebulae[2].y = h * 0.5;
+      nebulae[0].x = w * 0.15; nebulae[0].y = h * 0.1;
+      nebulae[1].x = w * 0.85; nebulae[1].y = h * 0.25;
+      nebulae[2].x = w * 0.3; nebulae[2].y = h * 0.5;
+      nebulae[3].x = w * 0.7; nebulae[3].y = h * 0.7;
+      nebulae[4].x = w * 0.5; nebulae[4].y = h * 0.9;
     };
 
     window.addEventListener('resize', handleResize);
@@ -153,13 +104,12 @@ export default function CosmicBackground({ intensity = 1 }) {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [intensity]);
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-20 pointer-events-none"
-      style={{ background: 'linear-gradient(180deg, #030308 0%, #0a0a15 50%, #050510 100%)' }}
+      className="fixed inset-0 w-full h-[300vh] -z-50 pointer-events-none"
       aria-hidden="true"
     />
   );
